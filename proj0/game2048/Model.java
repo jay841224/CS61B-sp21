@@ -110,6 +110,7 @@ public class Model extends Observable {
         boolean changed;
         changed = false;
         int size = board.size();
+        // rotate the board, so cwe can always use row from top
         board.setViewingPerspective(side);
 
         for (int col = 0; col < size; col++) {
