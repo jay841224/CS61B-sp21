@@ -109,16 +109,63 @@ public class Model extends Observable {
     public boolean tilt(Side side) {
         boolean changed;
         changed = false;
+        int size = board.size();
+        board.setViewingPerspective(side);
 
-        // TODO: Modify this.board (and perhaps this.score) to account
-        // for the tilt to the Side SIDE. If the board changed, set the
-        // changed local variable to true.
+        for (int col = 0; col < size; col++) {
+            boolean hasMerged = false;
+            for (int row = size - 1; row >= 0; row--) {
+                Tile beforeMoveTile = board.tile(col, row);
+                if (beforeMoveTile != null) {
+                    int maxMove = size - 1 - row;
+                    while (maxMove > 0) {
+                        Tile afterMoveTile = board.tile(col, size - maxMove);
+                        if (afterMoveTile != null) {
+                            if (beforeMoveTile.value() != afterMoveTile.value() || hasMerged) {
+                                hasMerged = false;
+                                break;
+                            }
+                        }
+                        boolean isMerge = board.move(col, size - maxMove, beforeMoveTile);
+                        beforeMoveTile = board.tile(col, size - maxMove);
 
+                        if (isMerge) {
+                            score += board.tile(col, size - maxMove).value();
+                            hasMerged = true;
+                        }
+                        changed = true;
+                        maxMove--;
+                    }
+                }
+            }
+        }
+
+        board.setViewingPerspective(Side.NORTH);
         checkGameOver();
         if (changed) {
             setChanged();
         }
         return changed;
+    }
+
+    private int getStep(int row, int col, Side side) {
+        int size = board.size();
+
+        switch (side) {
+            case NORTH -> {
+                return side.col(col, row, size);
+            }
+            case SOUTH -> {
+                return size - 1 - row;
+            }
+            case EAST -> {
+                return size - 1 - col;
+            }
+            case WEST -> {
+                return col;
+            }
+        }
+        return 0;
     }
 
     /** Checks if the game is over and sets the gameOver variable
@@ -137,7 +184,13 @@ public class Model extends Observable {
      *  Empty spaces are stored as null.
      * */
     public static boolean emptySpaceExists(Board b) {
-        // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) == null) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -147,7 +200,13 @@ public class Model extends Observable {
      * given a Tile object t, we get its value with t.value().
      */
     public static boolean maxTileExists(Board b) {
-        // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) != null && b.tile(i, j).value() == MAX_PIECE) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -158,13 +217,28 @@ public class Model extends Observable {
      * 2. There are two adjacent tiles with the same value.
      */
     public static boolean atLeastOneMoveExists(Board b) {
-        // TODO: Fill in this function.
+        if (emptySpaceExists(b)) {
+            return true;
+        }
+
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (j + 1 < b.size() && b.tile(i, j).value() == b.tile(i, j + 1).value()) {
+                    return true;
+                }
+
+                if (i + i < b.size() && b.tile(i, j).value() == b.tile(i + 1, j).value()) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 
 
     @Override
-     /** Returns the model as a string, used for debugging. */
+    /** Returns the model as a string, used for debugging. */
     public String toString() {
         Formatter out = new Formatter();
         out.format("%n[%n");
